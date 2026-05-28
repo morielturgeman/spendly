@@ -1,0 +1,199 @@
+/* Hero — centered single-column layout, overrides the 2-col grid in style.css */
+.hero {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 4rem 2rem 3.5rem;
+    gap: 3rem;
+    background: #fff;
+    max-width: 760px;
+    margin: 0 auto;
+}
+
+/* Badge */
+.lp-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--accent-light);
+    border: 1px solid #aecfba;
+    color: var(--ink-muted);
+    font-size: 0.85rem;
+    font-weight: 500;
+    padding: 0.4rem 1.1rem;
+    border-radius: 999px;
+}
+
+.lp-badge-dot {
+    width: 8px;
+    height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+/* Headline */
+.lp-title {
+    font-family: var(--font-body);
+    font-size: clamp(2.6rem, 6vw, 4.5rem);
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    margin: 0;
+}
+
+.lp-title-green {
+    color: var(--accent);
+}
+
+/* Subtitle */
+.lp-subtitle {
+    font-size: 1.05rem;
+    color: var(--ink-muted);
+    line-height: 1.75;
+    max-width: 540px;
+    margin: 0;
+}
+
+/* Buttons */
+.lp-hero-text {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    width: 100%;
+}
+
+.lp-actions {
+    display: flex;
+    gap: 0.85rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.lp-btn {
+    display: inline-block;
+    background: var(--ink);
+    color: #fff;
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    font-weight: 600;
+    padding: 0.75rem 1.6rem;
+    border-radius: var(--radius-md);
+    text-decoration: none;
+    transition: background 0.2s;
+}
+
+.lp-btn:hover { background: var(--accent); }
+
+/* Dashboard mockup */
+.lp-mockup {
+    width: 100%;
+    background: var(--paper-warm);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.07);
+    padding: 1.25rem 1.5rem 1.5rem;
+}
+
+.lp-mock-dots {
+    display: flex;
+    gap: 0.4rem;
+    margin-bottom: 1.25rem;
+}
+
+.lp-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+}
+
+.lp-dot-red    { background: #ff5f57; }
+.lp-dot-yellow { background: #ffbd2e; }
+.lp-dot-green  { background: #28ca41; }
+
+/* Stat cards */
+.lp-mock-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.lp-stat {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 0.9rem 1.1rem;
+    text-align: left;
+}
+
+.lp-stat-label {
+    font-size: 0.78rem;
+    color: var(--ink-muted);
+    margin-bottom: 0.3rem;
+}
+
+.lp-stat-value {
+    font-size: 1.55rem;
+    font-weight: 700;
+    color: var(--ink);
+    line-height: 1.2;
+    margin-bottom: 0.25rem;
+}
+
+.lp-stat-sub {
+    font-size: 0.78rem;
+    color: var(--ink-muted);
+}
+
+.lp-sub-red   { color: var(--danger); }
+.lp-sub-green { color: var(--accent); }
+
+/* Category bars */
+.lp-mock-bars {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 1.1rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+}
+
+.lp-bar-row {
+    display: grid;
+    grid-template-columns: 52px 1fr;
+    align-items: center;
+    gap: 1rem;
+}
+
+.lp-bar-cat {
+    font-size: 0.85rem;
+    color: var(--ink-soft);
+    text-align: right;
+}
+
+.lp-bar-track {
+    height: 8px;
+    background: #e5e2dc;
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.lp-bar {
+    height: 100%;
+    border-radius: 999px;
+}
+
+.lp-bar-orange { background: #c17f24; }
+.lp-bar-blue   { background: #4a8fd4; }
+.lp-bar-purple { background: #7b6dcf; }
+
+/* Responsive */
+@media (max-width: 600px) {
+    .lp-mock-stats { grid-template-columns: 1fr; }
+    .hero { padding: 3rem 1rem 2.5rem; }
+}
