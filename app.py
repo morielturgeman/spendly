@@ -1,12 +1,7 @@
-<<<<<<< HEAD
-from flask import Flask, render_template
-from database.db import get_db, init_db, seed_db
-=======
 import os
 from flask import Flask, render_template, request, redirect, url_for, session
 from werkzeug.security import generate_password_hash
-from database.db import init_db, create_user, get_user_by_email
->>>>>>> origin/main
+from database.db import get_db, init_db, seed_db, create_user, get_user_by_email
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-key')
