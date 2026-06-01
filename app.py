@@ -1,12 +1,7 @@
-<<<<<<< HEAD
-from flask import Flask, render_template
-from database.db import get_db, init_db, seed_db
-=======
 import os
 from flask import Flask, render_template, request, redirect, url_for, session
-from werkzeug.security import generate_password_hash
-from database.db import init_db, create_user, get_user_by_email
->>>>>>> origin/main
+from werkzeug.security import generate_password_hash, check_password_hash
+from database.db import get_db, init_db, seed_db, create_user, get_user_by_email
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-key')
@@ -43,15 +38,29 @@ def register():
             return render_template("register.html", error="An account with that email already exists.")
 
         user_id = create_user(name, email, generate_password_hash(password, method='pbkdf2:sha256'))
+        if user_id is None:
+            return render_template("register.html", error="An account with that email already exists.")
         session["user_id"] = user_id
         session["user_name"] = name
-        return redirect(url_for("dashboard"))
+        return redirect(url_for("landing"))
 
     return render_template("register.html")
 
 
-@app.route("/login")
+@app.route("/login", methods=["GET", "POST"])
 def login():
+    if request.method == "POST":
+        email = request.form.get("email", "").strip()
+        password = request.form.get("password", "")
+
+        user = get_user_by_email(email)
+        if not user or not check_password_hash(user["password_hash"], password):
+            return render_template("login.html", error="Invalid email or password.")
+
+        session["user_id"] = user["id"]
+        session["user_name"] = user["name"]
+        return redirect(url_for("landing"))
+
     return render_template("login.html")
 
 
@@ -76,7 +85,8 @@ def dashboard():
 
 @app.route("/logout")
 def logout():
-    return "Logout — coming in Step 3"
+    session.clear()
+    return redirect(url_for("landing"))
 
 
 @app.route("/profile")

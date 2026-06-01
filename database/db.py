@@ -67,3 +67,28 @@ def seed_db():
     )
     conn.commit()
     conn.close()
+
+
+def create_user(name, email, password_hash):
+    conn = get_db()
+    try:
+        cursor = conn.execute(
+            "INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)",
+            (name, email, password_hash),
+        )
+        user_id = cursor.lastrowid
+        conn.commit()
+        return user_id
+    except sqlite3.IntegrityError:
+        return None
+    finally:
+        conn.close()
+
+
+def get_user_by_email(email):
+    conn = get_db()
+    user = conn.execute(
+        "SELECT * FROM users WHERE email = ?", (email,)
+    ).fetchone()
+    conn.close()
+    return user
