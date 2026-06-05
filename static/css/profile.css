@@ -1,0 +1,279 @@
+.profile-wrapper {
+    max-width: var(--max-width);
+    margin: 0 auto;
+    padding: 2.5rem 1.5rem 4rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+/* User info card */
+.user-card {
+    background: var(--paper-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.user-avatar {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: var(--paper-card);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.user-info h2 {
+    font-family: var(--font-display);
+    font-size: 1.4rem;
+    color: var(--ink);
+    margin: 0 0 0.25rem;
+}
+
+.user-info .user-email {
+    color: var(--ink-muted);
+    font-size: 0.95rem;
+    margin: 0 0 0.25rem;
+}
+
+.user-info .user-since {
+    color: var(--ink-faint);
+    font-size: 0.85rem;
+    margin: 0;
+}
+
+/* Summary stats */
+.stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+}
+
+.stat-box {
+    background: var(--paper-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.stat-label {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ink-faint);
+    font-family: var(--font-body);
+}
+
+.stat-value {
+    font-family: var(--font-display);
+    font-size: 1.8rem;
+    color: var(--ink);
+    line-height: 1;
+}
+
+.stat-value--text {
+    font-size: 1.15rem;
+    line-height: 1.3;
+}
+
+.stat-sub {
+    font-size: 0.85rem;
+    color: var(--ink-muted);
+}
+
+/* Category color scale — hottest (most spent) → coolest */
+:root {
+    --cat-color-1: #c0392b;  /* Shopping    — red     */
+    --cat-color-2: #c17f24;  /* Food        — amber   */
+    --cat-color-3: #7a9a45;  /* Groceries   — olive   */
+    --cat-color-4: #4a8a7d;  /* Transport   — teal    */
+    --cat-color-5: #5b7fa6;  /* Entertainment — blue  */
+}
+
+.cat-1 { --cat-color: var(--cat-color-1); }
+.cat-2 { --cat-color: var(--cat-color-2); }
+.cat-3 { --cat-color: var(--cat-color-3); }
+.cat-4 { --cat-color: var(--cat-color-4); }
+.cat-5 { --cat-color: var(--cat-color-5); }
+
+/* Bottom grid */
+.bottom-grid {
+    display: grid;
+    grid-template-columns: 3fr 2fr;
+    gap: 1.5rem;
+    align-items: start;
+}
+
+/* Transaction history */
+.section-heading {
+    font-family: var(--font-display);
+    font-size: 1.15rem;
+    color: var(--ink);
+    margin: 0 0 1rem;
+}
+
+.transactions-card {
+    background: var(--paper-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+.transactions-card .section-heading {
+    padding: 1.25rem 1.5rem 0;
+}
+
+.transactions-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.transactions-table th {
+    text-align: left;
+    padding: 0.75rem 1.5rem;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ink-faint);
+    border-bottom: 1px solid var(--border-soft);
+    font-weight: 500;
+}
+
+.transactions-table td {
+    padding: 0.9rem 1.5rem;
+    color: var(--ink-soft);
+    border-bottom: 1px solid var(--border-soft);
+}
+
+.transactions-table tr:last-child td {
+    border-bottom: none;
+}
+
+.transactions-table .col-amount {
+    text-align: right;
+    font-weight: 600;
+    color: var(--ink);
+}
+
+/* Category badges */
+.badge {
+    display: inline-block;
+    padding: 0.25em 0.7em;
+    border-radius: var(--radius-lg);
+    font-size: 0.78rem;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.badge-shopping     { background: #fdecea; color: var(--cat-color-1); }
+.badge-food-dining  { background: #fdf3e3; color: var(--cat-color-2); }
+.badge-groceries    { background: #eef4e2; color: var(--cat-color-3); }
+.badge-transport    { background: #e3f2f0; color: var(--cat-color-4); }
+.badge-entertainment{ background: #e8eef5; color: var(--cat-color-5); }
+.badge-other        { background: var(--border); color: var(--ink-muted); }
+
+.tx-amount { color: var(--danger) !important; }
+
+/* Category breakdown */
+.categories-card {
+    background: var(--paper-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 1.25rem 1.5rem 1.5rem;
+}
+
+.category-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    margin-top: 1rem;
+}
+
+.category-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.category-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.category-dot-name {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.category-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--cat-color, var(--accent));
+    flex-shrink: 0;
+}
+
+.category-name {
+    font-size: 0.9rem;
+    color: var(--ink-soft);
+}
+
+.category-total {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--ink);
+}
+
+.bar-track {
+    height: 8px;
+    background: var(--border-soft);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+}
+
+.bar {
+    height: 100%;
+    width: var(--bar-pct, 0%);
+    background: var(--cat-color, var(--accent));
+    border-radius: var(--radius-sm);
+    transition: width 0.3s ease;
+}
+
+/* Responsive */
+@media (max-width: 860px) {
+    .bottom-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 600px) {
+    .stats-row {
+        grid-template-columns: 1fr;
+    }
+
+    .user-card {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .transactions-table th,
+    .transactions-table td {
+        padding: 0.75rem 1rem;
+    }
+}

@@ -42,7 +42,7 @@ def register():
             return render_template("register.html", error="An account with that email already exists.")
         session["user_id"] = user_id
         session["user_name"] = name
-        return redirect(url_for("landing"))
+        return redirect(url_for("profile"))
 
     return render_template("register.html")
 
@@ -59,7 +59,7 @@ def login():
 
         session["user_id"] = user["id"]
         session["user_name"] = user["name"]
-        return redirect(url_for("landing"))
+        return redirect(url_for("profile"))
 
     return render_template("login.html")
 
@@ -91,7 +91,41 @@ def logout():
 
 @app.route("/profile")
 def profile():
-    return "Profile page — coming in Step 4"
+    if not session.get("user_id"):
+        return redirect(url_for("login"))
+
+    user = {
+        "name": "Alex Johnson",
+        "email": "alex@example.com",
+        "initials": "AJ",
+        "member_since": "January 2024",
+    }
+
+    stats = {
+        "total_spent": "$3,248.50",
+        "transaction_count": 47,
+        "top_category": "Food & Dining",
+    }
+
+    transactions = [
+        {"date": "Jun 3, 2026",  "description": "Whole Foods Market",  "category": "Groceries",     "amount": "-$84.32"},
+        {"date": "Jun 2, 2026",  "description": "Netflix Subscription", "category": "Entertainment", "amount": "-$15.99"},
+        {"date": "Jun 1, 2026",  "description": "Shell Gas Station",    "category": "Transport",     "amount": "-$52.10"},
+        {"date": "May 30, 2026", "description": "Chipotle",             "category": "Food & Dining", "amount": "-$13.45"},
+        {"date": "May 28, 2026", "description": "Amazon Prime",         "category": "Shopping",      "amount": "-$139.00"},
+    ]
+
+    # Ordered by amount desc so cls 1=most spent (hottest color) → 5=least
+    categories = [
+        {"name": "Shopping",      "total": "$861.00", "pct": 26, "cls": "cat-1"},
+        {"name": "Food & Dining", "total": "$842.30", "pct": 26, "cls": "cat-2"},
+        {"name": "Groceries",     "total": "$634.80", "pct": 20, "cls": "cat-3"},
+        {"name": "Transport",     "total": "$512.40", "pct": 16, "cls": "cat-4"},
+        {"name": "Entertainment", "total": "$398.00", "pct": 12, "cls": "cat-5"},
+    ]
+
+    return render_template("profile.html", user=user, stats=stats,
+                           transactions=transactions, categories=categories)
 
 
 @app.route("/expenses/add")
