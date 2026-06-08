@@ -255,6 +255,108 @@
     transition: width 0.3s ease;
 }
 
+/* Filter bar */
+.filter-bar {
+    background: var(--paper-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 1rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.filter-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.preset-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+.preset-btn {
+    display: inline-block;
+    padding: 0.35em 0.9em;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+    background: var(--paper);
+    color: var(--ink-muted);
+    font-size: 0.85rem;
+    font-family: var(--font-body);
+    text-decoration: none;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.preset-btn:hover {
+    background: var(--border-soft);
+    color: var(--ink);
+}
+
+.preset-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--paper-card);
+    font-weight: 600;
+}
+
+.custom-date-form {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.custom-date-form input[type="date"] {
+    padding: 0.35em 0.6em;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--paper);
+    color: var(--ink);
+    font-size: 0.85rem;
+    font-family: var(--font-body);
+}
+
+.date-sep {
+    color: var(--ink-faint);
+    font-size: 0.85rem;
+}
+
+.apply-btn {
+    padding: 0.38em 0.9em;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--accent);
+    background: var(--accent);
+    color: var(--paper-card);
+    font-size: 0.85rem;
+    font-family: var(--font-body);
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s;
+}
+
+.apply-btn:hover {
+    opacity: 0.85;
+}
+
+.date-range-label {
+    font-size: 0.8rem;
+    color: var(--ink-faint);
+    margin: 0;
+}
+
+/* Empty state */
+.empty-state {
+    padding: 2rem 1.5rem;
+    color: var(--ink-faint);
+    font-size: 0.9rem;
+    text-align: center;
+}
+
 /* Responsive */
 @media (max-width: 860px) {
     .bottom-grid {

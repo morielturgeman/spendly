@@ -24,18 +24,43 @@
     <div class="stat-box">
       <span class="stat-label">Total Spent</span>
       <span class="stat-value">{{ stats.total_spent }}</span>
-      <span class="stat-sub">all time</span>
+      <span class="stat-sub">{{ range_label | lower }}</span>
     </div>
     <div class="stat-box">
       <span class="stat-label">Transactions</span>
       <span class="stat-value">{{ stats.transaction_count }}</span>
-      <span class="stat-sub">recorded</span>
+      <span class="stat-sub">{{ range_label | lower }}</span>
     </div>
     <div class="stat-box">
       <span class="stat-label">Top Category</span>
-      <span class="stat-value stat-value--text">{{ stats.top_category }}</span>
+      <span class="stat-value stat-value--text">{{ stats.top_category or "—" }}</span>
       <span class="stat-sub">most spending</span>
     </div>
+  </div>
+
+  {# Date filter bar #}
+  <div class="filter-bar">
+    <div class="filter-top">
+      <div class="preset-buttons">
+        <a href="{{ preset_urls.this_month }}"
+           class="preset-btn{% if active_preset == 'this_month' %} active{% endif %}">This Month</a>
+        <a href="{{ preset_urls.last_30 }}"
+           class="preset-btn{% if active_preset == 'last_30' %} active{% endif %}">Last 30 Days</a>
+        <a href="{{ preset_urls.last_3_months }}"
+           class="preset-btn{% if active_preset == 'last_3_months' %} active{% endif %}">Last 3 Months</a>
+        <a href="{{ preset_urls.all_time }}"
+           class="preset-btn{% if active_preset == 'all_time' %} active{% endif %}">All Time</a>
+      </div>
+      <form class="custom-date-form" method="get" action="{{ url_for('profile') }}">
+        <input type="date" name="from_date" value="{{ from_date or '' }}" title="From">
+        <span class="date-sep">→</span>
+        <input type="date" name="to_date" value="{{ to_date or '' }}" title="To">
+        <button type="submit" class="apply-btn">Apply</button>
+      </form>
+    </div>
+    {% if active_preset == 'custom' %}
+    <p class="date-range-label">{{ range_label }}</p>
+    {% endif %}
   </div>
 
   {# Transactions + Category grid #}
@@ -44,6 +69,7 @@
     {# Transaction history #}
     <div class="transactions-card">
       <h3 class="section-heading">Recent Transactions</h3>
+      {% if transactions %}
       <table class="transactions-table">
         <thead>
           <tr>
@@ -68,6 +94,9 @@
           {% endfor %}
         </tbody>
       </table>
+      {% else %}
+      <p class="empty-state">No expenses yet for this period.</p>
+      {% endif %}
     </div>
 
     {# Category breakdown #}
