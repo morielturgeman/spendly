@@ -1,7 +1,10 @@
 import os
-from flask import Flask, render_template, request, redirect, url_for, session
+from flask import Flask, render_template, request, redirect, url_for, session, abort
 from werkzeug.security import generate_password_hash, check_password_hash
-from database.db import get_db, init_db, seed_db, create_user, get_user_by_email
+from datetime import datetime
+from database.db import (get_db, init_db, seed_db, create_user, get_user_by_email,
+                         get_user_by_id, get_recent_expenses, get_expense_stats,
+                         get_category_totals)
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-key')
@@ -94,34 +97,51 @@ def profile():
     if not session.get("user_id"):
         return redirect(url_for("login"))
 
+    user_row = get_user_by_id(session["user_id"])
+    if user_row is None:
+        abort(404)
+
+    created_dt = datetime.strptime(user_row["created_at"][:10], "%Y-%m-%d")
+    member_since = created_dt.strftime("%B %Y")
+    initials = "".join(p[0].upper() for p in user_row["name"].split()[:2])
+
     user = {
-        "name": "Alex Johnson",
-        "email": "alex@example.com",
-        "initials": "AJ",
-        "member_since": "January 2024",
+        "name": user_row["name"],
+        "email": user_row["email"],
+        "initials": initials,
+        "member_since": member_since,
     }
 
+    # ── SECTION: STATS (Subagent 2) ─────────────────────────────────────
+    stats_raw = get_expense_stats(session["user_id"])
     stats = {
-        "total_spent": "$3,248.50",
-        "transaction_count": 47,
-        "top_category": "Food & Dining",
+        "total_spent": "${:,.2f}".format(stats_raw["total_spent"]),
+        "transaction_count": stats_raw["transaction_count"],
+        "top_category": stats_raw["top_category"],
     }
 
+    # ── SECTION: TRANSACTIONS (Subagent 1) ──────────────────────────────
+    rows = get_recent_expenses(session["user_id"])
     transactions = [
-        {"date": "Jun 3, 2026",  "description": "Whole Foods Market",  "category": "Groceries",     "amount": "-$84.32"},
-        {"date": "Jun 2, 2026",  "description": "Netflix Subscription", "category": "Entertainment", "amount": "-$15.99"},
-        {"date": "Jun 1, 2026",  "description": "Shell Gas Station",    "category": "Transport",     "amount": "-$52.10"},
-        {"date": "May 30, 2026", "description": "Chipotle",             "category": "Food & Dining", "amount": "-$13.45"},
-        {"date": "May 28, 2026", "description": "Amazon Prime",         "category": "Shopping",      "amount": "-$139.00"},
+        {
+            "date": datetime.strptime(row["date"], "%Y-%m-%d").strftime("%b %-d, %Y"),
+            "description": row["description"] or "",
+            "category": row["category"],
+            "amount": "-${:,.2f}".format(row["amount"]),
+        }
+        for row in rows
     ]
 
-    # Ordered by amount desc so cls 1=most spent (hottest color) → 5=least
+    # ── SECTION: CATEGORIES (Subagent 3) ────────────────────────────────
+    cats_raw = get_category_totals(session["user_id"])
     categories = [
-        {"name": "Shopping",      "total": "$861.00", "pct": 26, "cls": "cat-1"},
-        {"name": "Food & Dining", "total": "$842.30", "pct": 26, "cls": "cat-2"},
-        {"name": "Groceries",     "total": "$634.80", "pct": 20, "cls": "cat-3"},
-        {"name": "Transport",     "total": "$512.40", "pct": 16, "cls": "cat-4"},
-        {"name": "Entertainment", "total": "$398.00", "pct": 12, "cls": "cat-5"},
+        {
+            "name": cat["name"],
+            "total": "${:,.2f}".format(cat["total"]),
+            "pct": cat["pct"],
+            "cls": "cat-{}".format(i + 1),
+        }
+        for i, cat in enumerate(cats_raw[:5])
     ]
 
     return render_template("profile.html", user=user, stats=stats,

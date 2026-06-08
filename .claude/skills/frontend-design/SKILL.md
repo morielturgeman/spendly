@@ -1,255 +1,104 @@
----
-name: spendly-ui-designer
-description: >
-  Generates modern, production-ready UI pages and components for Spendly, a personal
-  expense tracker built with Flask, Jinja2, and vanilla CSS/JS. Use this skill any time
-  the user says things like "design the ___ page", "create UI for ___", "build a component
-  for ___", "redesign ___", or "improve the look of ___" in the context of Spendly. Also
-  trigger when the user shares a screenshot of Spendly and asks for improvements, or says
-  the current design looks bad. Produces clean fintech-style HTML templates + CSS that
-  match the existing project conventions.
----
+# Spec: Backend Connection
 
-# Spendly UI Designer
+## Overview
+Step 5 replaces all hardcoded data in the `/profile` route with live queries
+against the SQLite database. The profile page currently renders a static demo
+user, fixed summary stats, a hand-typed transaction list, and a hardcoded
+category breakdown. This step wires those four sections to real data so that
+every logged-in user sees their own expenses. Three parallel subagents handle
+the three independent data concerns — transaction history, summary stats, and
+category breakdown — before being integrated into the single `/profile` route.
 
-Generates polished, consistent UI for the Spendly expense tracker.
-Spendly is a **Flask + Jinja2 + SQLite** app with **vanilla JS only** — no React, no npm.
+## Depends on
+- Step 1: Database setup (tables and `get_db()` exist)
+- Step 2: Registration (users are stored in the database)
+- Step 3: Login / Logout (`session["user_id"]` is set on login)
+- Step 4: Profile page static UI (template already renders all four sections)
 
-## Tech Constraints (non-negotiable)
-- Templates are Jinja2 HTML files; all must `{% extends "base.html" %}`
-- Vanilla CSS only — no Tailwind, no Bootstrap, no preprocessors
-- Vanilla JS only — no React, no jQuery, no npm packages
-- Icons: Lucide Icons via CDN (`<script src="https://unpkg.com/lucide@latest"></script>`) or inline SVGs
-- No new pip packages; no inline `<style>` tags — CSS goes in a new `.css` file
-- All internal links use `{{ url_for('route_name') }}` — never hardcode URLs
-- New routes → `app.py`; DB logic → `database/db.py`; new pages → `templates/`; CSS → `static/css/`
+## Routes
+No new routes. The existing `GET /profile` route is modified.
 
-## Design System
+## Database changes
+No database changes. The `users` and `expenses` tables already have all
+required columns (`user_id`, `amount`, `category`, `date`, `description`,
+`created_at`).
 
-### Color Palette
-```css
-/* Core tokens — use these in all new CSS files */
---color-bg:           #F8F9FC;   /* page background */
---color-surface:      #FFFFFF;   /* card / panel background */
---color-border:       #E8ECF4;   /* subtle dividers */
---color-text-primary: #1A1D2E;   /* headings */
---color-text-secondary:#6B7280;  /* labels, helper text */
---color-accent:       #6366F1;   /* primary CTA (indigo) */
---color-accent-light: #EEF2FF;   /* accent backgrounds / badges */
---color-success:      #10B981;   /* income / positive */
---color-success-light:#D1FAE5;
---color-danger:       #EF4444;   /* expenses / negative */
---color-danger-light: #FEE2E2;
---color-warning:      #F59E0B;   /* caution / pending */
---color-warning-light:#FEF3C7;
-```
+## Templates
+- **Modify**: `templates/profile.html`
+  - Amounts must be rendered with the ₹ symbol (Indian Rupee).
+  - All four dynamic sections (user info, summary stats, transaction list,
+    category breakdown) are already present — no structural changes needed,
+    only the Jinja variables they consume are now real.
 
-### Typography
-```css
---font-sans: 'DM Sans', 'Inter', system-ui, sans-serif;
-/* Load via: <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"> */
---text-xs:   0.75rem;   /* 12px — labels, badges */
---text-sm:   0.875rem;  /* 14px — body, table cells */
---text-base: 1rem;      /* 16px — default */
---text-lg:   1.125rem;  /* 18px — card titles */
---text-xl:   1.25rem;   /* 20px — section headers */
---text-2xl:  1.5rem;    /* 24px — page titles */
---text-3xl:  1.875rem;  /* 30px — hero numbers */
-```
+## Files to change
+- `app.py` — replace hardcoded data in the `profile()` view with DB queries
+- `templates/profile.html` — confirm ₹ symbol is used for all currency display
 
-### Spacing Grid (8px base)
-```
-4px  → micro gaps (icon+label, badge padding)
-8px  → tight spacing (list items, form field padding)
-12px → inner card padding (compact)
-16px → standard padding, grid gaps
-24px → card padding, section gaps
-32px → page sections
-48px → large section breaks
-```
+## Files to create
+- `database/queries.py` — pure query helpers (no Flask imports), one function
+  per data concern:
+  - `get_user_by_id(user_id)` → dict with `name`, `email`, `member_since`
+  - `get_summary_stats(user_id)` → dict with `total_spent`, `transaction_count`, `top_category`
+  - `get_recent_transactions(user_id, limit=10)` → list of dicts, each with `date`, `description`, `category`, `amount`
+  - `get_category_breakdown(user_id)` → list of dicts, each with `name`, `amount`, `pct` (percentage of total, rounded to nearest int)
 
-### Component Primitives
-```css
-/* Card */
-.card {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
-}
+## New dependencies
+No new dependencies.
 
-/* Badge */
-.badge {
-  display: inline-flex; align-items: center; gap: 4px;
-  padding: 2px 10px; border-radius: 999px;
-  font-size: var(--text-xs); font-weight: 600; letter-spacing: .02em;
-}
-.badge-expense { background: var(--color-danger-light); color: var(--color-danger); }
-.badge-income  { background: var(--color-success-light); color: var(--color-success); }
-.badge-neutral { background: var(--color-accent-light); color: var(--color-accent); }
+## Rules for implementation
+- No SQLAlchemy or ORMs — raw `sqlite3` only via `get_db()`
+- Parameterised queries only — never string-format values into SQL
+- Foreign keys PRAGMA must be enabled on every connection (already done in `get_db()`)
+- Use CSS variables — never hardcode hex values
+- All templates extend `base.html`
+- No inline styles
+- Currency must always display as ₹ — never £ or $
+- `member_since` must be derived from `users.created_at` and formatted as
+  "Month YYYY" (e.g. "January 2026")
+- `pct` values in category breakdown must sum to 100; use integer rounding and
+  adjust the largest category to absorb any rounding remainder
+- If a user has no expenses, summary stats should return zeros and empty lists
+  rather than raising exceptions
+- Query helpers in `database/queries.py` must call `get_db()` internally and
+  close the connection before returning
 
-/* Button */
-.btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px;
-  border-radius: 8px; font-size: var(--text-sm); font-weight: 500; cursor: pointer;
-  border: none; transition: all .15s ease; }
-.btn-primary { background: var(--color-accent); color: #fff; }
-.btn-primary:hover { background: #4F46E5; box-shadow: 0 4px 12px rgba(99,102,241,.3); }
-.btn-ghost { background: transparent; color: var(--color-text-secondary); border: 1px solid var(--color-border); }
-.btn-ghost:hover { background: var(--color-bg); }
+## Tests to write
 
-/* Input */
-.input {
-  width: 100%; padding: 10px 12px; border: 1.5px solid var(--color-border);
-  border-radius: 8px; font-size: var(--text-sm); background: var(--color-surface);
-  color: var(--color-text-primary); transition: border-color .15s;
-}
-.input:focus { outline: none; border-color: var(--color-accent);
-  box-shadow: 0 0 0 3px rgba(99,102,241,.1); }
-```
+### Unit tests
+File: `tests/test_backend_connection.py`
 
-### Navigation (base.html sidebar pattern)
-The sidebar is the primary nav. Active links use `--color-accent-light` background
-and `--color-accent` icon/text color. Nav items: Dashboard, Expenses, Add Expense,
-Categories, Profile. Always show Spendly wordmark + a small wallet icon at the top.
+| Function | Input | Expected output |
+|---|---|---|
+| `get_user_by_id` | valid `user_id` | dict with correct `name`, `email`, `member_since` |
+| `get_user_by_id` | non-existent id | `None` |
+| `get_summary_stats` | `user_id` with expenses | correct `total_spent`, `transaction_count`, `top_category` |
+| `get_summary_stats` | `user_id` with no expenses | `{"total_spent": 0, "transaction_count": 0, "top_category": "—"}` |
+| `get_recent_transactions` | `user_id` with expenses | list ordered newest-first, each item has `date`, `description`, `category`, `amount` |
+| `get_recent_transactions` | `user_id` with no expenses | empty list |
+| `get_category_breakdown` | `user_id` with expenses | list ordered by `amount` desc; `pct` values are integers summing to 100 |
+| `get_category_breakdown` | `user_id` with no expenses | empty list |
 
-### Iconography
-Use Lucide icons initialized with `lucide.createIcons()` at end of body.
-Common icons for Spendly:
-- `wallet` — app logo / balance
-- `trending-down` — expenses
-- `trending-up` — income  
-- `plus-circle` — add expense
-- `receipt` — expense list
-- `pie-chart` — categories
-- `user` — profile
-- `log-out` — logout
-- `calendar` — date filters
-- `filter` — filter/search
-- `edit-2` — edit action
-- `trash-2` — delete action
-- `check-circle` — success state
+### Route tests
+`GET /profile` — unauthenticated:
+- Redirects to `/login` (302)
 
----
+`GET /profile` — authenticated as seed user:
+- Returns 200
+- Response contains the seed user's name ("Demo User")
+- Response contains the seed user's email ("demo@spendly.com")
+- Response contains ₹ symbol
+- `total_spent` matches sum of all seed expenses (346.24)
+- `transaction_count` is 8
+- `top_category` is "Bills" (highest single-category total)
+- Transaction list appears in newest-first order
+- Category breakdown contains all 7 categories
 
-## Output Format
-
-For every UI request, produce:
-
-### 1. Layout Brief (3–5 lines)
-Describe the layout structure, key sections, and 1–2 important UX decisions. Be concise.
-
-### 2. Template file: `templates/<page>.html`
-Full Jinja2 template extending base.html.
-```html
-{% extends "base.html" %}
-{% block title %}Page Title — Spendly{% endblock %}
-{% block head %}
-<!-- page-specific font/icon imports if needed -->
-<link rel="stylesheet" href="{{ url_for('static', filename='css/<page>.css') }}">
-{% endblock %}
-{% block content %}
-<!-- page markup -->
-{% endblock %}
-```
-
-### 3. CSS file: `static/css/<page>.css`
-Clean, well-organized CSS using the design tokens above.
-Structure:
-```css
-/* ============================================================
-   <PAGE NAME>  |  spendly
-   ============================================================ */
-
-/* 1. Layout -------------------------------------------------- */
-/* 2. Header / Hero ------------------------------------------ */
-/* 3. Components --------------------------------------------- */
-/* 4. States (empty, loading, error) ------------------------- */
-/* 5. Responsive --------------------------------------------- */
-```
-
-### 4. (If needed) JS snippet for `static/js/main.js`
-Vanilla JS only. Keep it short and purposeful — DOM manipulation, form validation,
-chart rendering with a CDN-loaded library (Chart.js is OK via CDN).
-
----
-
-## Design Rules
-
-**Do:**
-- Use the token palette above — never introduce new brand colors without flagging
-- Rounded corners (8–12px on cards, 8px on inputs/buttons, 999px on pills/badges)
-- Soft shadows on cards, stronger on modals/dropdowns
-- Consistent 8px grid spacing
-- Amount values: right-align numbers in tables, use `font-variant-numeric: tabular-nums`
-- Negative amounts in `--color-danger`, positive in `--color-success`
-- Empty states: show an icon + friendly message + a CTA button
-- Skeleton loaders for async data (if JS is involved)
-
-**Don't:**
-- Inline `<style>` blocks in templates
-- Use arbitrary hex colors outside the token set
-- Add new fonts without mentioning it
-- Use JS frameworks or `npm install` anything
-- Hardcode URLs — always `url_for()`
-- Clutter cards with too many actions — max 2–3 visible, rest in a `•••` menu
-- Use dense tables without zebra-striping or hover states
-
----
-
-## Consistency Check
-
-Before generating code, ask yourself:
-1. Does this page have a counterpart in the existing repo? If yes, mirror its layout/nav.
-2. Are the color tokens from the palette above? If unclear → ask for a screenshot.
-3. Would a new developer recognize this as "the same app" as landing.html / base.html?
-
-If the user hasn't shared screenshots and the request touches a page that extends base.html,
-ask: *"Could you share a screenshot of the current design so I can match the style exactly?"*
-— but only if it's genuinely needed for consistency; don't block simple add-form requests.
-
----
-
-## Common Page Patterns
-
-### Dashboard (`/`)
-- Summary stat cards row: Total Spent, This Month, Top Category, Budget Left
-- Recent Expenses table (5–10 rows) with category badge + amount
-- Spending by Category donut chart (Chart.js via CDN, or CSS-only bars)
-- Quick Add Expense floating button (bottom-right on mobile)
-
-### Expense List (`/expenses`)
-- Filter bar: date range picker, category dropdown, search input
-- Sortable table: Date | Description | Category | Amount | Actions
-- Pagination footer
-- Empty state when no results
-
-### Add/Edit Expense (`/expenses/add`, `/expenses/<id>/edit`)
-- Single-column form, max-width 520px, centered
-- Fields: Amount (large input), Description, Category (select), Date (date picker), Notes (textarea)
-- Submit + Cancel buttons
-- Success flash message on redirect
-
-### Category Manager
-- Grid of category cards (icon, name, color swatch, expense count)
-- Add category inline form or modal-style slide-in panel
-
-### Profile (`/profile`)
-- Avatar placeholder + name/email
-- Edit form: name, email, currency preference
-- Danger zone: delete account (always at bottom, red-tinted card)
-
-### Login / Register
-- Centered card, max 400px
-- App logo at top
-- Fields with floating labels or clean stacked labels
-- Social proof tagline under the logo ("Track every rupee, effortlessly.")
-
----
-
-## References
-
-- `references/design-tokens.css` — copy-paste ready CSS variables
-- `references/component-examples.html` — standalone HTML kitchen sink for testing
-
-Read these when generating complex pages to ensure token accuracy.
+## Definition of done
+- [ ] Logging in as the seed user (demo@spendly.com / demo123) shows "Demo User" and "demo@spendly.com" on the profile page — not the hardcoded strings
+- [ ] Total spent displayed on the profile page equals ₹346.24
+- [ ] Transaction count displayed is 8
+- [ ] Top category displayed is "Bills"
+- [ ] Transaction list shows 8 rows ordered newest date first
+- [ ] Category breakdown shows 7 categories with percentages that add up to 100 %
+- [ ] All amounts on the page display the ₹ symbol
+- [ ] Registering a brand-new user and visiting `/profile` shows ₹0.00 total spent, 0 transactions, and an empty category breakdown — no errors
