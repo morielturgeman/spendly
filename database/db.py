@@ -104,31 +104,52 @@ def get_user_by_id(user_id):
         conn.close()
 
 
-def get_recent_expenses(user_id, limit=5):
+def _date_filters(from_date, to_date):
+    """Return (where_clause_fragment, params_list) for optional date bounds."""
+    clauses, params = [], []
+    if from_date:
+        clauses.append("date >= ?")
+        params.append(from_date)
+    if to_date:
+        clauses.append("date <= ?")
+        params.append(to_date)
+    fragment = (" AND " + " AND ".join(clauses)) if clauses else ""
+    return fragment, params
+
+
+def get_recent_expenses(user_id, limit=None, from_date=None, to_date=None):
+    date_fragment, date_params = _date_filters(from_date, to_date)
+    query = (
+        "SELECT id, amount, category, date, description FROM expenses"
+        " WHERE user_id = ?" + date_fragment + " ORDER BY date DESC"
+    )
+    params = (user_id, *date_params)
+    if limit is not None:
+        query += " LIMIT ?"
+        params = (*params, limit)
     conn = get_db()
     try:
-        return conn.execute(
-            "SELECT id, amount, category, date, description FROM expenses"
-            " WHERE user_id = ? ORDER BY date DESC LIMIT ?",
-            (user_id, limit),
-        ).fetchall()
+        return conn.execute(query, params).fetchall()
     finally:
         conn.close()
 
 
-def get_expense_stats(user_id):
+def get_expense_stats(user_id, from_date=None, to_date=None):
+    date_fragment, date_params = _date_filters(from_date, to_date)
     conn = get_db()
     try:
         row = conn.execute(
-            "SELECT COALESCE(SUM(amount), 0.0) as total, COUNT(*) as cnt FROM expenses WHERE user_id = ?",
-            (user_id,),
+            "SELECT COALESCE(SUM(amount), 0.0) as total, COUNT(*) as cnt"
+            " FROM expenses WHERE user_id = ?" + date_fragment,
+            (user_id, *date_params),
         ).fetchone()
         total_spent = float(row["total"])
         transaction_count = int(row["cnt"])
 
         top_row = conn.execute(
-            "SELECT category FROM expenses WHERE user_id = ? GROUP BY category ORDER BY SUM(amount) DESC LIMIT 1",
-            (user_id,),
+            "SELECT category FROM expenses WHERE user_id = ?" + date_fragment
+            + " GROUP BY category ORDER BY SUM(amount) DESC LIMIT 1",
+            (user_id, *date_params),
         ).fetchone()
         top_category = top_row["category"] if top_row else None
 
@@ -137,13 +158,15 @@ def get_expense_stats(user_id):
         conn.close()
 
 
-def get_category_totals(user_id):
+def get_category_totals(user_id, from_date=None, to_date=None):
+    date_fragment, date_params = _date_filters(from_date, to_date)
+    query = (
+        "SELECT category, SUM(amount) as total FROM expenses"
+        " WHERE user_id = ?" + date_fragment + " GROUP BY category ORDER BY total DESC"
+    )
     conn = get_db()
     try:
-        rows = conn.execute(
-            "SELECT category, SUM(amount) as total FROM expenses WHERE user_id = ? GROUP BY category ORDER BY total DESC",
-            (user_id,),
-        ).fetchall()
+        rows = conn.execute(query, (user_id, *date_params)).fetchall()
         if not rows:
             return []
         grand_total = sum(float(row["total"]) for row in rows)

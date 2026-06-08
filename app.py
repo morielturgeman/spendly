@@ -1,7 +1,7 @@
 import os
 from flask import Flask, render_template, request, redirect, url_for, session, abort
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime
+from datetime import datetime, date, timedelta
 from database.db import (get_db, init_db, seed_db, create_user, get_user_by_email,
                          get_user_by_id, get_recent_expenses, get_expense_stats,
                          get_category_totals)
@@ -92,12 +92,39 @@ def logout():
     return redirect(url_for("landing"))
 
 
+def _parse_date(value):
+    """Return a validated YYYY-MM-DD string or None."""
+    if not value:
+        return None
+    try:
+        datetime.strptime(value, "%Y-%m-%d")
+        return value
+    except ValueError:
+        return None
+
+
+def _compute_presets():
+    today = date.today()
+    first_of_month = today.replace(day=1)
+    return {
+        "this_month":    (first_of_month.isoformat(), today.isoformat()),
+        "last_30":       ((today - timedelta(days=30)).isoformat(), today.isoformat()),
+        "last_3_months": ((today - timedelta(days=90)).isoformat(), today.isoformat()),
+        "all_time":      (None, None),
+    }
+
+
+def _fmt_display_date(d):
+    return datetime.strptime(d, "%Y-%m-%d").strftime("%b %-d, %Y") if d else None
+
+
 @app.route("/profile")
 def profile():
     if not session.get("user_id"):
         return redirect(url_for("login"))
 
-    user_row = get_user_by_id(session["user_id"])
+    user_id = session["user_id"]
+    user_row = get_user_by_id(user_id)
     if user_row is None:
         abort(404)
 
@@ -112,16 +139,37 @@ def profile():
         "member_since": member_since,
     }
 
-    # ── SECTION: STATS (Subagent 2) ─────────────────────────────────────
-    stats_raw = get_expense_stats(session["user_id"])
+    from_date = _parse_date(request.args.get("from_date"))
+    to_date = _parse_date(request.args.get("to_date"))
+
+    presets = _compute_presets()
+    active_preset = "custom"
+    if not from_date and not to_date:
+        active_preset = "all_time"
+    else:
+        for key, (p_from, p_to) in presets.items():
+            if from_date == p_from and to_date == p_to:
+                active_preset = key
+                break
+
+    preset_urls = {
+        key: url_for("profile", from_date=p_from, to_date=p_to)
+        for key, (p_from, p_to) in presets.items()
+    }
+
+    if from_date or to_date:
+        range_label = "{} – {}".format(_fmt_display_date(from_date) or "…", _fmt_display_date(to_date) or "…")
+    else:
+        range_label = "All time"
+
+    stats_raw = get_expense_stats(user_id, from_date=from_date, to_date=to_date)
     stats = {
         "total_spent": "${:,.2f}".format(stats_raw["total_spent"]),
         "transaction_count": stats_raw["transaction_count"],
         "top_category": stats_raw["top_category"],
     }
 
-    # ── SECTION: TRANSACTIONS (Subagent 1) ──────────────────────────────
-    rows = get_recent_expenses(session["user_id"])
+    rows = get_recent_expenses(user_id, from_date=from_date, to_date=to_date)
     transactions = [
         {
             "date": datetime.strptime(row["date"], "%Y-%m-%d").strftime("%b %-d, %Y"),
@@ -132,8 +180,7 @@ def profile():
         for row in rows
     ]
 
-    # ── SECTION: CATEGORIES (Subagent 3) ────────────────────────────────
-    cats_raw = get_category_totals(session["user_id"])
+    cats_raw = get_category_totals(user_id, from_date=from_date, to_date=to_date)
     categories = [
         {
             "name": cat["name"],
@@ -144,8 +191,18 @@ def profile():
         for i, cat in enumerate(cats_raw[:5])
     ]
 
-    return render_template("profile.html", user=user, stats=stats,
-                           transactions=transactions, categories=categories)
+    return render_template(
+        "profile.html",
+        user=user,
+        stats=stats,
+        transactions=transactions,
+        categories=categories,
+        from_date=from_date,
+        to_date=to_date,
+        active_preset=active_preset,
+        preset_urls=preset_urls,
+        range_label=range_label,
+    )
 
 
 @app.route("/expenses/add")
