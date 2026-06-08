@@ -92,3 +92,66 @@ def get_user_by_email(email):
     ).fetchone()
     conn.close()
     return user
+
+
+def get_user_by_id(user_id):
+    conn = get_db()
+    try:
+        return conn.execute(
+            "SELECT * FROM users WHERE id = ?", (user_id,)
+        ).fetchone()
+    finally:
+        conn.close()
+
+
+def get_recent_expenses(user_id, limit=5):
+    conn = get_db()
+    try:
+        return conn.execute(
+            "SELECT id, amount, category, date, description FROM expenses"
+            " WHERE user_id = ? ORDER BY date DESC LIMIT ?",
+            (user_id, limit),
+        ).fetchall()
+    finally:
+        conn.close()
+
+
+def get_expense_stats(user_id):
+    conn = get_db()
+    try:
+        row = conn.execute(
+            "SELECT COALESCE(SUM(amount), 0.0) as total, COUNT(*) as cnt FROM expenses WHERE user_id = ?",
+            (user_id,),
+        ).fetchone()
+        total_spent = float(row["total"])
+        transaction_count = int(row["cnt"])
+
+        top_row = conn.execute(
+            "SELECT category FROM expenses WHERE user_id = ? GROUP BY category ORDER BY SUM(amount) DESC LIMIT 1",
+            (user_id,),
+        ).fetchone()
+        top_category = top_row["category"] if top_row else None
+
+        return {"total_spent": total_spent, "transaction_count": transaction_count, "top_category": top_category}
+    finally:
+        conn.close()
+
+
+def get_category_totals(user_id):
+    conn = get_db()
+    try:
+        rows = conn.execute(
+            "SELECT category, SUM(amount) as total FROM expenses WHERE user_id = ? GROUP BY category ORDER BY total DESC",
+            (user_id,),
+        ).fetchall()
+        if not rows:
+            return []
+        grand_total = sum(float(row["total"]) for row in rows)
+        result = []
+        for row in rows:
+            row_total = float(row["total"])
+            pct = int(round(row_total / grand_total * 100)) if grand_total else 0
+            result.append({"name": row["category"], "total": row_total, "pct": pct})
+        return result
+    finally:
+        conn.close()
